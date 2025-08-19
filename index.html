@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旧漢字新漢字相互変換機</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Yuji+Syuku&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Yuji Syuku', 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            background-image: url('https://user0514.cdnw.net/shared/img/thumb/texture201200485_TP_V.jpg');
+            background-attachment: fixed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8 flex flex-col items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">旧漢字新漢字相互変換機</h1>
+        <p class="text-center text-gray-600 mb-6">
+            テキストエリアに文字を入力し、変換したい方のボタンを押してください。
+        </p>
+        
+        <div class="mb-4">
+            <label for="inputText" class="block text-gray-700 font-medium mb-2">入力テキスト</label>
+            <textarea id="inputText" rows="8" class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 resize-none" placeholder="例: 學習は樂しい、體を動かす事もだ。"></textarea>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+            <button id="convertToNew" class="bg-blue-600 text-white font-mediumd py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 transform hover:scale-105">
+                舊漢字 → 新漢字
+            </button>
+            <button id="convertToOld" class="bg-indigo-600 text-white font-medium py-3 px-6 rounded-lg shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-200 transform hover:scale-105">
+                新漢字 → 舊漢字
+            </button>
+        </div>
+        
+        <div>
+            <label for="outputText" class="block text-gray-700 font-medium mb-2">出力テキスト</label>
+            <textarea id="outputText" rows="8" class="w-full p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 resize-none" readonly></textarea>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputText = document.getElementById('inputText');
+            const outputText = document.getElementById('outputText');
+            const convertToNewButton = document.getElementById('convertToNew');
+            const convertToOldButton = document.getElementById('convertToOld');
+            const oldToNewMap = {
+                '亞': '亜', '惡': '悪', '醫': '医', '壹': '壱', '圓': '円', '應': '応', '櫻': '桜', '翁': '翁',
+                '艷': '艶', '橫': '横', '奧': '奥', '價': '価', '假': '仮', '會': '会', '懷': '懐', '迴': '回',
+                '壞': '壊', '繪': '絵', '擴': '拡', '學': '学', '嶽': '岳', '樂': '楽', '渴': '渇', '歡': '歓',
+                '卷': '巻', '氣': '気', '擧': '挙', '峽': '峡', '挾': '挟', '狹': '狭', '徑': '径', '螢': '蛍',
+                '獻': '献', '嚴': '厳', '號': '号', '國': '国', '黑': '黒', '濟': '済', '雜': '雑', '兒': '児',
+                '濕': '湿', '實': '実', '寫': '写', '壽': '寿', '從': '従', '巢': '巣', '歲': '歳', '說': '説',
+                '戰': '戦', '曾': '曽', '裝': '装', '臟': '臓', '屬': '属', '帶': '帯', '擇': '択', '膽': '胆',
+                '單': '単', '擔': '担', '團': '団', '遲': '遅', '晝': '昼', '鑄': '鋳', '廳': '庁', '徵': '徴',
+                '聽': '聴', '廳': '庁', '鐵': '鉄', '轉': '転', '覽': '覧', '曆': '暦', '勵': '励', '壘': '塁',
+                '簾': '廉', '爐': '炉', '戾': '戻', '聾': '聾', '勞': '労', '錄': '録', '亙': '亙', '豫': '予',
+                '榮': '栄', '驛': '駅', '鹽': '塩', '畫': '画', '覺': '覚', '勸': '勧', '續': '続', '繼': '継',
+                '缺': '欠', '經': '経', '莖': '茎', '惠': '恵', '營': '営', '舊': '旧', '賣': '売', '來': '来',
+                '體': '体', '佛': '仏', '傳': '伝', '係': '係', '儉': '倹', '緣': '縁', '黃': '黄', '陷': '陥',
+                '觀': '観', '關': '関'
+            };
+            const newToOldMap = {};
+            for (const oldKanji in oldToNewMap) {
+                const newKanji = oldToNewMap[oldKanji];
+                if (newToOldMap[newKanji]) {
+                    if (!Array.isArray(newToOldMap[newKanji])) {
+                        newToOldMap[newKanji] = [newToOldMap[newKanji]];
+                    }
+                    newToOldMap[newKanji].push(oldKanji);
+                } else {
+                    newToOldMap[newKanji] = oldKanji;
+                }
+            }
+
+            function convert(text, map) {
+                let convertedText = text;
+                for (const oldChar in map) {
+                    const newChar = map[oldChar];
+                    if (Array.isArray(newChar)) {
+                    } else {
+                        const regex = new RegExp(oldChar, 'g');
+                        convertedText = convertedText.replace(regex, newChar);
+                    }
+                }
+                return convertedText;
+            }
+
+            function convertToOld(text, map) {
+                let convertedText = text;
+                for (const newChar in map) {
+                    const oldChars = map[newChar];
+                    if (Array.isArray(oldChars)) {
+                         const regex = new RegExp(newChar, 'g');
+                         convertedText = convertedText.replace(regex, oldChars[0]);
+                    } else {
+                        const regex = new RegExp(newChar, 'g');
+                        convertedText = convertedText.replace(regex, oldChars);
+                    }
+                }
+                return convertedText;
+            }
+
+            convertToNewButton.addEventListener('click', () => {
+                const text = inputText.value;
+                const convertedText = convert(text, oldToNewMap);
+                outputText.value = convertedText;
+            });
+
+            convertToOldButton.addEventListener('click', () => {
+                const text = inputText.value;
+                const convertedText = convertToOld(text, newToOldMap);
+                outputText.value = convertedText;
+            });
+        });
+    </script>
+</body>
+</html>
